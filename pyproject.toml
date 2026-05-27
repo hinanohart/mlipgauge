@@ -55,6 +55,17 @@ mlipgauge = "mlipgauge.cli:app"
 Homepage = "https://github.com/hinanohart/mlipgauge"
 Repository = "https://github.com/hinanohart/mlipgauge"
 
+# The real-backend extras pin mutually incompatible shared deps (e.g. mace-torch
+# needs e3nn==0.4.4 while mattersim needs e3nn>=0.5.0), so they cannot be
+# installed together. Declaring the conflicts keeps the project resolvable by
+# uv: install at most one backend extra per environment.
+[tool.uv]
+conflicts = [
+    [{ extra = "mace" }, { extra = "mattersim" }],
+    [{ extra = "mace" }, { extra = "chgnet" }],
+    [{ extra = "chgnet" }, { extra = "mattersim" }],
+]
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/mlipgauge"]
 

@@ -28,12 +28,18 @@ jobs:
         with:
           enable-cache: true
           python-version: ${{ matrix.python-version }}
-      # uv manages an isolated venv (no --system: avoids PEP 668 externally-managed
-      # interpreters on ubuntu/macos). The first `uv run` creates + syncs it.
+      # Install only core + dev into an isolated venv (no --system: avoids PEP 668
+      # externally-managed interpreters; pip-style install avoids resolving the
+      # mutually-incompatible backend extras). Then run with --no-sync so uv does
+      # not re-resolve the whole project.
+      - name: Install (core + dev, mock backend only — GPU-free)
+        run: |
+          uv venv --python ${{ matrix.python-version }}
+          uv pip install -e ".[dev]"
       - name: Lint
-        run: uv run --extra dev ruff check src tests scripts
+        run: uv run --no-sync ruff check src tests scripts
       - name: Test (L1 core math + L2 mock pipeline, GPU-free)
-        run: uv run --extra dev pytest -q --cov=mlipgauge --cov-report=term-missing
+        run: uv run --no-sync pytest -q --cov=mlipgauge --cov-report=term-missing
 
   build:
     name: build (sdist + wheel)
@@ -47,6 +53,6 @@ jobs:
         run: uv build
       - name: Check wheel imports cleanly
         run: |
-          uv venv
+          uv venv --python 3.12
           uv pip install dist/*.whl
           uv run --no-sync python -c "import mlipgauge; print(mlipgauge.__version__)"
