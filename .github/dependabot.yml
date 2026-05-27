@@ -1,0 +1,15 @@
+version: 2
+updates:
+  # Version-update PRs are disabled (limit 0) to avoid noise on a pre-alpha
+  # repo; dependencies are reviewed manually. Security updates (if enabled at
+  # the repo level) are unaffected by this limit.
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 0
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 0
