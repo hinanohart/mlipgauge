@@ -1,0 +1,63 @@
+{
+  "meta": {
+    "n": 200,
+    "mode": "synthetic",
+    "hw": "x86_64",
+    "os": "Linux 6.6.87.2-microsoft-standard-WSL2",
+    "python": "3.12.3",
+    "date": "2026-05-27T17:02:47Z",
+    "seed": 0,
+    "version": "0.1.0a1"
+  },
+  "claim": "physics gate detects injected hard violations and passes valid windows",
+  "disclaimer": "constructed trajectories (harmonic mock + injected violations), not real MLIP-MD on real materials; live validation deferred",
+  "sensitivity": {
+    "energy_force_consistency": {
+      "rate": 1.0,
+      "n": 200,
+      "ci95": [
+        1.0,
+        1.0
+      ]
+    },
+    "nve_energy_conservation": {
+      "rate": 1.0,
+      "n": 200,
+      "ci95": [
+        1.0,
+        1.0
+      ]
+    },
+    "imaginary_phonon": {
+      "rate": 1.0,
+      "n": 200,
+      "ci95": [
+        1.0,
+        1.0
+      ]
+    },
+    "stress_symmetry": {
+      "rate": 1.0,
+      "n": 200,
+      "ci95": [
+        1.0,
+        1.0
+      ]
+    }
+  },
+  "specificity_clean": {
+    "rate": 1.0,
+    "n": 200,
+    "ci95": [
+      1.0,
+      1.0
+    ]
+  },
+  "energy_force_threshold_sweep": {
+    "0.5x_tol": 0.0,
+    "0.9x_tol": 0.0,
+    "1.1x_tol": 1.0,
+    "2.0x_tol": 1.0,
+    "5.0x_tol": 1.0
+  }
+}

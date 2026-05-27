@@ -1,0 +1,41 @@
+mlipgauge
+Copyright 2026 hinanohart
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+================================================================================
+Third-party backend / weight license matrix
+================================================================================
+
+mlipgauge ships NO model weights. Real MLIP backends are optional extras,
+installed on demand. Their model weights carry their own licenses, which the
+user accepts when installing the corresponding extra. mlipgauge enforces an
+allow-list at runtime (see src/mlipgauge/backends/base.py: BACKEND_LICENSES)
+and refuses, fail-closed, to load a backend whose declared license is not on
+the allow-list.
+
+  Backend            Extra              Weight license     Commercial use
+  -----------------  -----------------  -----------------  ---------------
+  MACE-MP-0          pip install ...    MIT                yes
+  CHGNet             [chgnet]           BSD-3-Clause       yes
+  MatterSim          [mattersim]        MIT                yes
+  mock (built-in)    (none)             Apache-2.0         yes  (deterministic, no weights)
+
+DELIBERATELY EXCLUDED (not on the allow-list; loading is refused fail-closed):
+
+  MACE-OMAT-0        --                 ASL (non-commercial)   NO
+
+Rationale: the Academic Software License (ASL) used by some OMAT-trained
+checkpoints forbids commercial use. To keep mlipgauge's default surface
+unambiguously commercial-friendly (Apache-2.0), such checkpoints are excluded
+from the built-in allow-list. A user may extend the allow-list explicitly and
+thereby accept that license, but it is never enabled by default.
+
+================================================================================
+Runtime Python dependencies
+================================================================================
+
+  numpy   - BSD-3-Clause
+  scipy   - BSD-3-Clause
+  typer   - MIT          (optional, [cli] extra)
+  ase     - LGPL-2.1+    (optional, only with real-backend extras)

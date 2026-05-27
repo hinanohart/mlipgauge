@@ -1,0 +1,77 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mlipgauge"
+version = "0.1.0a1"
+description = "Uncertainty-driven runtime guardrail for MLIP molecular dynamics: calibrated cross-model uncertainty plus a fail-closed physics-validity gate over trajectory windows."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Apache-2.0" }
+authors = [{ name = "hinanohart" }]
+keywords = [
+    "machine-learning-interatomic-potential",
+    "molecular-dynamics",
+    "uncertainty-quantification",
+    "active-learning",
+    "calibration",
+    "materials-science",
+    "guardrail",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Chemistry",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+dependencies = [
+    "numpy>=1.24",
+    "scipy>=1.10",
+    "typer>=0.12",
+]
+
+[project.optional-dependencies]
+# Real backends are heavy and license-segregated; installed on demand only.
+# Weights/licenses: MACE-MP-0 = MIT, CHGNet = BSD-3, MatterSim = MIT.
+# Deliberately NOT shipped: MACE-OMAT-0 (ASL, non-commercial).
+mace = ["mace-torch>=0.3", "ase>=3.23"]
+chgnet = ["chgnet>=0.3", "ase>=3.23"]
+mattersim = ["mattersim>=1.0", "ase>=3.23"]
+ase = ["ase>=3.23"]
+dev = [
+    "pytest>=7.4",
+    "pytest-cov>=4.1",
+    "ruff>=0.5",
+    "typer>=0.12",
+]
+
+[project.scripts]
+mlipgauge = "mlipgauge.cli:app"
+
+[project.urls]
+Homepage = "https://github.com/hinanohart/mlipgauge"
+Repository = "https://github.com/hinanohart/mlipgauge"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mlipgauge"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+filterwarnings = [
+    # emitted by a globally-installed pytest-asyncio plugin we don't depend on;
+    # absent in the clean CI environment.
+    "ignore:.*asyncio_default_fixture_loop_scope.*:Warning",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP", "B"]
+ignore = ["E501"]

@@ -1,0 +1,48 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash -euo pipefail {0}
+
+jobs:
+  test:
+    name: test (${{ matrix.os }}, py${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Install (core + dev, mock backend only — GPU-free)
+        run: uv pip install --system -e ".[dev]"
+      - name: Lint
+        run: ruff check src tests scripts
+      - name: Test (L1 core math + L2 mock pipeline)
+        run: pytest -q --cov=mlipgauge --cov-report=term-missing
+
+  build:
+    name: build (sdist + wheel)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Build distributions
+        run: uv build
+      - name: Check wheel imports cleanly
+        run: |
+          uv pip install --system dist/*.whl
+          python -c "import mlipgauge; print(mlipgauge.__version__)"

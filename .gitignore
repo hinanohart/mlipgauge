@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# Secrets / credentials (R11/R13 — never commit token values)
+.env
+.env.*
+*.pem
+*.key
+*token*
+*secret*
+.config/
+
+# Large data / model weights (kept out of repo; fetched on demand)
+*.pt
+*.pth
+*.ckpt
+*.model
+data/
+weights/
+*.extxyz
+*.traj
+
+# OS / editor
+.DS_Store
+*.swp
+
+# internal autonomous-build orchestration state (not part of the package)
+.mlipgauge-progress.json

@@ -1,0 +1,29 @@
+{
+  "meta": {
+    "n": 4000,
+    "mode": "synthetic",
+    "hw": "x86_64",
+    "os": "Linux 6.6.87.2-microsoft-standard-WSL2",
+    "python": "3.12.3",
+    "date": "2026-05-27T17:02:56Z",
+    "seed": 0,
+    "version": "0.1.0a1"
+  },
+  "non_claim": true,
+  "disclaimer": "SYNTHETIC calibration demo only; not a measured MLIP/materials capability. Calibration is a non-claim layer of mlipgauge.",
+  "ece_raw": {
+    "value": 0.1323991023886007,
+    "ci95": [
+      0.11380812583388043,
+      0.15066225793378785
+    ]
+  },
+  "ece_calibrated": {
+    "value": 0.024861039096718492,
+    "ci95": [
+      0.018538825500340046,
+      0.045558997447842975
+    ]
+  },
+  "ece_reduction": 0.1075380632918822
+}
