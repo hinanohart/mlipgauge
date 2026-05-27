@@ -27,12 +27,13 @@ jobs:
       - uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
-      - name: Install (core + dev, mock backend only — GPU-free)
-        run: uv pip install --system -e ".[dev]"
+          python-version: ${{ matrix.python-version }}
+      # uv manages an isolated venv (no --system: avoids PEP 668 externally-managed
+      # interpreters on ubuntu/macos). The first `uv run` creates + syncs it.
       - name: Lint
-        run: ruff check src tests scripts
-      - name: Test (L1 core math + L2 mock pipeline)
-        run: pytest -q --cov=mlipgauge --cov-report=term-missing
+        run: uv run --extra dev ruff check src tests scripts
+      - name: Test (L1 core math + L2 mock pipeline, GPU-free)
+        run: uv run --extra dev pytest -q --cov=mlipgauge --cov-report=term-missing
 
   build:
     name: build (sdist + wheel)
@@ -40,9 +41,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
       - name: Build distributions
         run: uv build
       - name: Check wheel imports cleanly
         run: |
-          uv pip install --system dist/*.whl
-          python -c "import mlipgauge; print(mlipgauge.__version__)"
+          uv venv
+          uv pip install dist/*.whl
+          uv run --no-sync python -c "import mlipgauge; print(mlipgauge.__version__)"
