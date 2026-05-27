@@ -114,9 +114,12 @@ def measure(n: int = 200, seed: int = 0) -> dict:
             run_physics_gate(w, cfg).hard_checks["nve_energy_conservation"] is False
         )
 
-        # imaginary phonon
-        h_neg = np.eye(3 * nat) * 2.0
-        h_neg[0, 0] = -1.0
+        # imaginary phonon: a genuine soft optical mode (eigenvector orthogonal
+        # to rigid translation, so it survives acoustic-mode projection)
+        u = np.zeros(3 * nat)
+        u[0], u[3] = 1.0, -1.0
+        u /= np.linalg.norm(u)
+        h_neg = np.eye(3 * nat) * 2.0 + (-1.0 - 2.0) * np.outer(u, u)
         sens["imaginary_phonon"].append(
             run_physics_gate(clean, cfg, hessian=h_neg, masses=np.ones(nat)).hard_checks[
                 "imaginary_phonon"

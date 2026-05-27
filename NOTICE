@@ -31,6 +31,11 @@ unambiguously commercial-friendly (Apache-2.0), such checkpoints are excluded
 from the built-in allow-list. A user may extend the allow-list explicitly and
 thereby accept that license, but it is never enabled by default.
 
+The allow-list validates the *declared* license of a named backend. If a caller
+loads a differently-licensed checkpoint into a generically-named backend (e.g. an
+ASL-licensed weight set behind a backend whose declared name maps to MIT),
+honoring that checkpoint's actual license remains the caller's responsibility.
+
 ================================================================================
 Runtime Python dependencies
 ================================================================================

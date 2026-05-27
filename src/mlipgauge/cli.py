@@ -86,6 +86,11 @@ def gauge(
     )
     summary = _summarize(decisions)
     summary["active_learning_queue"] = queue.export()
+    summary["note"] = (
+        "uncertainty is from the deterministic mock ensemble (k-spread only), "
+        "not real-backend disagreement — illustrative, not physical; "
+        "real-backend inference is deferred to a later release"
+    )
     text = json.dumps(summary, indent=2)
     if out:
         with open(out, "w", encoding="utf-8") as fh:

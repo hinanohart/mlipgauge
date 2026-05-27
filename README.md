@@ -22,7 +22,7 @@ Q_traj(t) = [ ∏_k hard_gate_k(window_t) ] · (1 − u) · ∏ soft_scores
 - a **calibrated cross-model uncertainty** `u ∈ [0, 1]` from disagreement across
   several MLIPs.
 
-> **Pre-alpha (`0.1.0a1`) scope.** The physics-validity gate is the claimed
+> **Pre-alpha (`0.1.0a2`) scope.** The physics-validity gate is the claimed
 > contribution and is measured below. Calibration is a standard isotonic recipe
 > and a **non-claim** layer — its numbers come from synthetic data and are
 > labelled as such. Live inference with real backends and heterogeneous-UQ
@@ -85,16 +85,24 @@ skipped (and recorded) rather than guessed when its inputs are absent:
 |---|---|---|
 | `energy_force_consistency` | ΔE vs −∮F·dx (non-conservative / discontinuous PES) | ≥ 2 frames |
 | `nve_energy_conservation` | total (pot+kin) energy drift | kinetic energy |
-| `imaginary_phonon` | min mass-weighted Hessian eigenvalue < −tol (ω² < 0) | a Hessian + masses |
+| `imaginary_phonon` | min mass-weighted Hessian eigenvalue < −tol (ω² < 0), rigid translational (acoustic) modes projected out first | a Hessian + masses |
 | `stress_symmetry` | ‖σ − σᵀ‖ / ‖σ‖ (spurious torque) | stress tensor |
 
 The hard checks are combined multiplicatively (`hard_valid = ∏ 1[check passed]`),
 so the gate is fail-closed: one violation is enough to reject the window. Soft
 scores (continuous health in [0, 1]) down-weight near-violations without zeroing
 `Q`. The physics primitives themselves are standard; what `mlipgauge` adds is the
-decision layer that runs them over MD windows, normalizes per atom, handles
-acoustic modes and absent inputs, and feeds the runtime gauge and the
-active-learning queue.
+decision layer that runs them over MD windows, normalizes per atom, projects the
+rigid translational (acoustic) modes out of the Hessian before the phonon test
+(so a finite-difference acoustic artefact of a stable structure is not mistaken
+for an imaginary mode), skips — rather than guesses — absent inputs, and feeds
+the runtime gauge and the active-learning queue.
+
+> **Limitation (synthetic `0.1.0a*` scope).** Residuals and drifts are normalized
+> *per atom*, which targets system-wide (extensive) violations; a single-atom
+> localized discontinuity can be diluted in a very large cell. Quantifying this on
+> real anharmonic MD — and adding a complementary localized (per-atom-maximum)
+> threshold — is part of the deferred real-MD validation.
 
 ## Measured results
 
@@ -131,11 +139,11 @@ works on synthetic data; it is **not** a materials or MLIP capability claim.
 
 ## Claims and non-claims
 
-**Claimed in `0.1.0a1`:** the physics-validity gate detects the four injected
+**Claimed in `0.1.0a2`:** the physics-validity gate detects the four injected
 hard violations and passes valid windows on the constructed trajectories above,
 with a graded threshold response.
 
-**Not claimed in `0.1.0a1`:**
+**Not claimed in `0.1.0a2`:**
 
 - calibration quality on real data — the calibration numbers are synthetic and
   labelled as such;

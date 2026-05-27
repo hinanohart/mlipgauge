@@ -117,7 +117,7 @@ class TrajectoryWindow:
 class EnsembleForces:
     """Force predictions from ``K`` independent models over a window's frames.
 
-    This is the sole uncertainty source in 0.1.0a1: cross-model force
+    This is the sole uncertainty source in 0.1.0a2: cross-model force
     disagreement. ``forces`` has shape (K, F, N, 3) in eV/Å with K >= 2.
     """
 

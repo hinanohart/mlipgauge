@@ -112,6 +112,35 @@ def test_stress_symmetry_pass_and_fail():
     assert run_physics_gate(w_bad).hard_checks["stress_symmetry"] is False
 
 
+def test_near_zero_stress_is_skipped_not_guessed():
+    """A ~zero stress tensor carries no symmetry information; the check is
+    skipped rather than spuriously passed (all-zeros) or failed (tiny noise)."""
+    w, _ = _consistent_window()
+    tiny = np.zeros((w.n_frames, 3, 3))
+    tiny[:, 0, 1] = 1e-12
+    tiny[:, 1, 0] = -1e-12  # antisymmetric, but far below stress_min_norm
+    w_tiny = TrajectoryWindow(
+        positions=w.positions,
+        forces=w.forces,
+        potential_energy=w.potential_energy,
+        atomic_numbers=w.atomic_numbers,
+        timestep_fs=1.0,
+        stress=tiny,
+    )
+    r = run_physics_gate(w_tiny)
+    assert "stress_symmetry" in r.skipped
+    assert "stress_symmetry" not in r.hard_checks
+
+
+def _optical_mode(n_atoms):
+    """A unit eigenvector orthogonal to rigid translation (atoms 0 and 1 move
+    oppositely along x): a genuine optical mode, not a translational artefact."""
+    u = np.zeros(3 * n_atoms)
+    u[0] = 1.0
+    u[3] = -1.0
+    return u / np.linalg.norm(u)
+
+
 def test_imaginary_phonon_pass_and_fail():
     w, _ = _consistent_window()
     n = w.n_atoms
@@ -119,13 +148,34 @@ def test_imaginary_phonon_pass_and_fail():
     # positive-definite Hessian -> no imaginary modes
     h_pd = np.eye(3 * n) * 2.0
     assert run_physics_gate(w, hessian=h_pd, masses=masses).hard_checks["imaginary_phonon"] is True
-    # one strongly negative eigenvalue -> imaginary phonon
-    h_neg = np.eye(3 * n) * 2.0
-    h_neg[0, 0] = -1.0
+    # a genuine soft optical mode (eigenvalue −1 along a translation-orthogonal
+    # eigenvector) survives acoustic projection and must be flagged
+    u = _optical_mode(n)
+    h_neg = np.eye(3 * n) * 2.0 + (-1.0 - 2.0) * np.outer(u, u)
     r = run_physics_gate(w, hessian=h_neg, masses=masses)
     assert r.hard_checks["imaginary_phonon"] is False
     assert r.hard_valid == 0
     assert any("imaginary" in s for s in r.reasons)
+
+
+def test_acoustic_translation_not_flagged_as_imaginary():
+    """A stable structure whose finite-difference Hessian has a slightly-negative
+    rigid translational mode must pass once acoustic modes are projected out, and
+    be (correctly) flagged when projection is disabled — proving it is the
+    projection, not a loosened tolerance, that removes the artefact."""
+    w, _ = _consistent_window()
+    n = w.n_atoms
+    masses = np.array([1.0, 1.0])
+    t = np.zeros(3 * n)
+    t[0] = 1.0
+    t[3] = 1.0  # rigid x-translation (mass-weighted; equal masses)
+    t /= np.linalg.norm(t)
+    # translational eigenvalue = −1e-2, well below −phonon_neg_tol (1e-4)
+    h = np.eye(3 * n) * 2.0 + (-1.0e-2 - 2.0) * np.outer(t, t)
+    raw = run_physics_gate(w, PhysicsGateConfig(project_acoustic=False), hessian=h, masses=masses)
+    assert raw.hard_checks["imaginary_phonon"] is False  # artefact flagged w/o projection
+    proj = run_physics_gate(w, PhysicsGateConfig(project_acoustic=True), hessian=h, masses=masses)
+    assert proj.hard_checks["imaginary_phonon"] is True  # artefact removed by projection
 
 
 def test_multiplicative_one_violation_zeroes_hard_valid():

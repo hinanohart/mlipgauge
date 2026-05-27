@@ -4,10 +4,10 @@
     "mode": "synthetic",
     "hw": "x86_64",
     "os": "Linux 6.6.87.2-microsoft-standard-WSL2",
-    "python": "3.12.3",
-    "date": "2026-05-27T17:11:51Z",
+    "python": "3.14.5",
+    "date": "2026-05-27T19:11:15Z",
     "seed": 0,
-    "version": "0.1.0a1"
+    "version": "0.1.0a2"
   },
   "claim": "physics gate detects injected hard violations and passes valid windows",
   "disclaimer": "constructed trajectories (harmonic mock + injected violations), not real MLIP-MD on real materials; live validation deferred",

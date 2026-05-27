@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-__version__ = "0.1.0a1"
+__version__ = "0.1.0a2"
 
 # name -> ("module-tag", attr). Module tag is dispatched by *literal* imports
 # below (no dynamic import_module of a variable: keeps the import surface a

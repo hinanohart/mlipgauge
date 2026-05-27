@@ -38,3 +38,6 @@ weights/
 
 # internal autonomous-build orchestration state (not part of the package)
 .mlipgauge-progress.json
+
+# uv lockfile (library: resolved fresh in CI, not pinned)
+uv.lock

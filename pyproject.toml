@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mlipgauge"
-version = "0.1.0a1"
+version = "0.1.0a2"
 description = "Uncertainty-driven runtime guardrail for MLIP molecular dynamics: calibrated cross-model uncertainty plus a fail-closed physics-validity gate over trajectory windows."
 readme = "README.md"
 requires-python = ">=3.11"

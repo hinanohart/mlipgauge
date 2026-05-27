@@ -1,7 +1,7 @@
 """Shared ASE-calculator glue for the real backends.
 
 NOTE (honesty): live inference with real MLIP backends is NOT exercised in CI
-(no GPU, no weights) and is therefore NOT a tested claim of 0.1.0a1 — it is
+(no GPU, no weights) and is therefore NOT a tested claim of 0.1.0a2 — it is
 deferred/validated in a later release. This code is real (it calls the model
 through ASE, not a fake), but treat it as unverified-in-CI until then.
 

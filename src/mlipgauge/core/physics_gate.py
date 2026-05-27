@@ -13,18 +13,25 @@ over a molecular-dynamics trajectory *window*, and combines them multiplicativel
 so the gate is fail-closed by construction. What mlipgauge adds over the
 underlying physics primitives (which one could compute with ASE/phonopy/numpy)
 is the *decision layer*: trajectory-window evaluation, per-atom normalization,
-acoustic-mode-aware imaginary-phonon test, skip-not-guess handling of absent
-inputs, and the multiplicative hard/soft separation feeding the runtime gauge.
+an imaginary-phonon test that projects out the rigid translational (acoustic)
+modes, skip-not-guess handling of absent inputs, and the multiplicative
+hard/soft separation feeding the runtime gauge.
 
 Hard checks (each: applicable? + passed?):
   1. energy_force_consistency  -- ΔE vs −∮F·dx (catches non-conservative /
                                   discontinuous PES); needs >=2 frames.
   2. nve_energy_conservation   -- drift of total (pot+kin) energy; needs KE.
   3. imaginary_phonon          -- min mass-weighted Hessian eigenvalue < −tol
-                                  (ω²<0); needs a Hessian + masses.
-  4. stress_symmetry           -- ‖σ−σᵀ‖/‖σ‖; needs stress.
+                                  (ω²<0), after the three rigid translational
+                                  (acoustic) modes are projected out; needs a
+                                  Hessian + masses.
+  4. stress_symmetry           -- ‖σ−σᵀ‖/‖σ‖; needs a stress above a tiny
+                                  absolute floor (a ~zero stress is skipped).
 
 Absent inputs => the dependent check is *skipped and recorded*, never guessed.
+Residuals/drifts are normalized per atom; this targets system-wide (extensive)
+violations and can dilute a single-atom localized discontinuity in a very large
+cell — a known limitation of the synthetic-scope ``0.1.0a*`` release (see README).
 """
 
 from __future__ import annotations
@@ -35,7 +42,10 @@ import numpy as np
 
 from mlipgauge.types import GateResult, TrajectoryWindow
 
-# atomic masses (amu) for Z=1..36; enough for common MD systems. Index 0 unused.
+# standard atomic weights (amu) for Z=1..92, covering the periodic table through
+# uranium (materials-science systems routinely include heavy transition metals,
+# lanthanides and actinides). Index 0 unused. Pass ``masses`` explicitly for any
+# Z outside this range or for isotopically-resolved studies.
 _ATOMIC_MASSES = np.array(
     [
         0.0,
@@ -75,6 +85,62 @@ _ATOMIC_MASSES = np.array(
         78.971,
         79.904,
         83.798,
+        85.468,
+        87.62,
+        88.906,
+        91.224,
+        92.906,
+        95.95,
+        98.0,
+        101.07,
+        102.91,
+        106.42,
+        107.868,
+        112.414,
+        114.818,
+        118.710,
+        121.760,
+        127.60,
+        126.904,
+        131.293,
+        132.905,
+        137.327,
+        138.905,
+        140.116,
+        140.908,
+        144.242,
+        145.0,
+        150.36,
+        151.964,
+        157.25,
+        158.925,
+        162.500,
+        164.930,
+        167.259,
+        168.934,
+        173.045,
+        174.967,
+        178.49,
+        180.948,
+        183.84,
+        186.207,
+        190.23,
+        192.217,
+        195.084,
+        196.967,
+        200.592,
+        204.38,
+        207.2,
+        208.980,
+        209.0,
+        210.0,
+        222.0,
+        223.0,
+        226.0,
+        227.0,
+        232.038,
+        231.036,
+        238.029,
     ]
 )
 
@@ -89,6 +155,13 @@ class PhysicsGateConfig:
     phonon_neg_tol: float = 1.0e-4
     # max relative stress asymmetry ‖σ−σᵀ‖_F / (‖σ‖_F+eps)
     stress_asym_tol: float = 1.0e-3
+    # below this Frobenius norm a stress tensor is treated as ~zero: its symmetry
+    # is un-assessable, so the check is skipped (not silently passed or failed)
+    stress_min_norm: float = 1.0e-8
+    # project the three rigid translational (acoustic) modes out of the
+    # mass-weighted Hessian before the imaginary-phonon test, so a finite-
+    # difference acoustic artefact is not mistaken for a real instability
+    project_acoustic: bool = True
     # soft-score decay scale: soft = exp(−(violation_size / threshold) * this)
     soft_decay: float = 1.0
 
@@ -98,6 +171,7 @@ class PhysicsGateConfig:
             "nve_drift_tol_ev_per_atom",
             "phonon_neg_tol",
             "stress_asym_tol",
+            "stress_min_norm",
         ):
             v = getattr(self, name)
             if not (v > 0 and np.isfinite(v)):
@@ -112,6 +186,33 @@ def _masses_for(atomic_numbers: np.ndarray) -> np.ndarray:
             "built-in mass table; pass masses explicitly otherwise"
         )
     return _ATOMIC_MASSES[z]
+
+
+def _project_out_translations(dyn: np.ndarray, masses: np.ndarray) -> np.ndarray:
+    """Remove the three rigid-body translational (acoustic) modes from a
+    mass-weighted Hessian.
+
+    Translational invariance makes these modes *exactly* zero for an ideal
+    Hessian, but a finite-difference one carries small (and possibly negative)
+    residuals on them; without this projection a perfectly stable structure can
+    be misread as having an imaginary phonon. In mass-weighted coordinates the
+    translation along axis ``a`` has component √mᵢ on coordinate ``3i+a``; the
+    three such (mutually orthogonal) vectors are normalized into ``V`` and
+    removed with ``P = I − VVᵀ``, returning the symmetric ``P·dyn·P``.
+
+    Only translations are projected: for a periodic crystal the rotational modes
+    are not zero-modes, and for an isolated cluster they are intentionally left
+    in (a true internal soft mode, being orthogonal to rigid translation, is
+    unaffected and still detected).
+    """
+    n = masses.shape[0]
+    sqrt_m = np.sqrt(masses)
+    v = np.zeros((3 * n, 3), dtype=np.float64)
+    for a in range(3):
+        v[a::3, a] = sqrt_m  # coordinate 3i+a carries √mᵢ
+    v /= np.linalg.norm(v, axis=0, keepdims=True)
+    proj = np.eye(3 * n) - v @ v.T
+    return proj @ dyn @ proj
 
 
 def _soft(violation: float, threshold: float, decay: float) -> float:
@@ -157,6 +258,8 @@ def run_physics_gate(
         pred_dE = -np.einsum("fnd,fnd->f", fbar, dx)  # (F-1,)
         actual_dE = window.potential_energy[1:] - window.potential_energy[:-1]
         resid = np.abs(actual_dE - pred_dE)  # (F-1,)
+        # worst single-step residual, normalized per atom (not a per-frame mean):
+        # a localized discontinuity at any one step is enough to reject the window
         max_resid_per_atom = float(resid.max() / n)
         ok = max_resid_per_atom <= cfg.energy_force_tol_ev_per_atom
         hard["energy_force_consistency"] = ok
@@ -200,6 +303,8 @@ def run_physics_gate(
         inv_sqrt_m = 1.0 / np.sqrt(np.repeat(m, 3))  # (3N,)
         h_sym = 0.5 * (h + h.T)
         dyn = h_sym * inv_sqrt_m[:, None] * inv_sqrt_m[None, :]  # mass-weighted
+        if cfg.project_acoustic:
+            dyn = _project_out_translations(dyn, m)  # drop rigid acoustic modes
         eig = np.linalg.eigvalsh(dyn)  # ascending, = ω²
         min_eig = float(eig[0])
         ok = min_eig >= -cfg.phonon_neg_tol
@@ -216,17 +321,24 @@ def run_physics_gate(
     # 4) stress-tensor symmetry
     if window.stress is not None:
         s = window.stress  # (F,3,3)
-        asym = np.linalg.norm(s - np.transpose(s, (0, 2, 1)), axis=(1, 2))
-        denom = np.linalg.norm(s, axis=(1, 2)) + 1e-12
-        rel = float((asym / denom).max())
-        ok = rel <= cfg.stress_asym_tol
-        hard["stress_symmetry"] = ok
-        soft["stress_symmetry_margin"] = _soft(rel, cfg.stress_asym_tol, cfg.soft_decay)
-        if not ok:
-            reasons.append(
-                f"stress asymmetry {rel:.3e} > tol {cfg.stress_asym_tol:.3e} "
-                "(σ≠σᵀ: spurious torque)"
-            )
+        s_norm = np.linalg.norm(s, axis=(1, 2))  # (F,)
+        if float(s_norm.max()) < cfg.stress_min_norm:
+            # a ~zero stress carries no symmetry information: skip, don't guess
+            # (avoids both a vacuous pass on all-zeros and a spurious fail on
+            #  antisymmetric numerical noise of negligible magnitude)
+            skipped.append("stress_symmetry")
+        else:
+            asym = np.linalg.norm(s - np.transpose(s, (0, 2, 1)), axis=(1, 2))
+            denom = s_norm + 1e-12
+            rel = float((asym / denom).max())
+            ok = rel <= cfg.stress_asym_tol
+            hard["stress_symmetry"] = ok
+            soft["stress_symmetry_margin"] = _soft(rel, cfg.stress_asym_tol, cfg.soft_decay)
+            if not ok:
+                reasons.append(
+                    f"stress asymmetry {rel:.3e} > tol {cfg.stress_asym_tol:.3e} "
+                    "(σ≠σᵀ: spurious torque)"
+                )
     else:
         skipped.append("stress_symmetry")
 

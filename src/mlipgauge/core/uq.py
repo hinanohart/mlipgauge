@@ -1,4 +1,4 @@
-"""Uncertainty quantification (0.1.0a1: single source = cross-model force
+"""Uncertainty quantification (0.1.0a2: single source = cross-model force
 disagreement).
 
 Given force predictions from K>=2 independent MLIPs over the same frames, the
@@ -8,7 +8,7 @@ then over the window to a raw scale ``u_raw`` (eV/Å), and squashed into [0,1].
 
 The metric itself is standard (cross-model disagreement; cf. heterogeneous
 ensembles for atomistic foundation models). mlipgauge does not claim a novel UQ
-estimator in 0.1.0a1 — heterogeneous-UQ calibration is deferred to a later
+estimator in 0.1.0a2 — heterogeneous-UQ calibration is deferred to a later
 release. The contribution here is wiring this signal, fail-closed, into the
 runtime gauge.
 """
