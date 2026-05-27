@@ -75,8 +75,16 @@ class IsotonicCalibrator:
             raise ValueError("labels must be binary {0,1}")
         order = np.argsort(scores, kind="mergesort")
         s = scores[order]
-        g = _pava(labels[order], np.ones(labels.size))
-        g = np.clip(g, 0.0, 1.0)
+        g = np.clip(_pava(labels[order], np.ones(labels.size)), 0.0, 1.0)
+        # Collapse duplicate scores into a single breakpoint (mean of the block's
+        # fitted values) so np.interp is well-defined on tied x (still monotone).
+        uniq, inv = np.unique(s, return_inverse=True)
+        if uniq.size != s.size:
+            agg = np.zeros(uniq.size)
+            np.add.at(agg, inv, g)
+            counts = np.bincount(inv, minlength=uniq.size)
+            g = agg / counts
+            s = uniq
         return cls(x=s, y=g, synthetic=bool(synthetic))
 
     def predict(self, scores) -> np.ndarray:

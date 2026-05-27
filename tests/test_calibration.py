@@ -52,6 +52,18 @@ def test_isotonic_predict_monotone_and_bounded():
     assert cal.synthetic is True
 
 
+def test_isotonic_duplicate_scores_are_well_defined():
+    # all-equal scores: breakpoints collapse to one, prediction is the block mean
+    cal = IsotonicCalibrator.fit(np.array([0.5, 0.5, 0.5, 0.5]), np.array([0.0, 1.0, 1.0, 0.0]))
+    assert cal.x.size == 1
+    assert cal.predict_one(0.5) == pytest.approx(0.5)
+    # partially-tied scores stay monotone and bounded
+    cal2 = IsotonicCalibrator.fit(np.array([0.1, 0.1, 0.9, 0.9]), np.array([0.0, 0.0, 1.0, 1.0]))
+    p = cal2.predict(np.array([0.1, 0.5, 0.9]))
+    assert np.all((p >= 0) & (p <= 1))
+    assert np.all(np.diff(p) >= -1e-12)
+
+
 def test_isotonic_rejects_non_binary_labels():
     with pytest.raises(ValueError):
         IsotonicCalibrator.fit(np.array([0.1, 0.2]), np.array([0.5, 1.0]))

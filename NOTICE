@@ -36,6 +36,5 @@ Runtime Python dependencies
 ================================================================================
 
   numpy   - BSD-3-Clause
-  scipy   - BSD-3-Clause
-  typer   - MIT          (optional, [cli] extra)
+  typer   - MIT          (core dependency; powers the CLI)
   ase     - LGPL-2.1+    (optional, only with real-backend extras)

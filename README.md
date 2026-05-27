@@ -39,7 +39,9 @@ pip install "mlipgauge[mattersim]" # + MatterSim    (weights: MIT)
 ```
 
 The core install has no GPU or model-weight dependency and runs the deterministic
-`mock` backend used throughout the tests.
+`mock` backend used throughout the tests. The real-backend extras pin conflicting
+versions of shared dependencies (e.g. `e3nn`), so install **one** backend extra
+per environment rather than several at once.
 
 ## Quickstart
 
@@ -118,7 +120,7 @@ a multiple of the tolerance is `0.0` at 0.5× and 0.9×, then `1.0` at 1.1×, 2�
 **Calibration (non-claim, synthetic).** On a constructed miscalibrated score
 distribution with a train/holdout split (`n = 4000`, seed 0), isotonic
 calibration reduces expected calibration error from **0.132 (0.114, 0.151)** to
-**0.025 (0.019, 0.046)** on the holdout. This only shows the calibration code
+**0.027 (0.021, 0.049)** on the holdout. This only shows the calibration code
 works on synthetic data; it is **not** a materials or MLIP capability claim.
 
 ## Claims and non-claims
