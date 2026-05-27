@@ -65,6 +65,16 @@ def test_trajectory_clean_run_trusts_all_and_empty_queue():
     assert len(queue) == 0
 
 
+def test_trajectory_shorter_than_window_is_refused():
+    import pytest
+
+    traj, z = _clean_traj(n_frames=3)
+    with pytest.raises(ValueError, match="frames"):
+        gauge_trajectory_from_backends(
+            MockBackend(1.5), [MockBackend(1.5), MockBackend(1.51)], traj, z, window_size=4
+        )
+
+
 def test_trajectory_high_disagreement_flags_and_queues():
     traj, z = _clean_traj(n_frames=6)
     primary = MockBackend(k=1.5)

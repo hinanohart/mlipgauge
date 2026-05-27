@@ -62,10 +62,18 @@ def gauge_trajectory_from_backends(
     n_frames = pos.shape[0]
     if window_size < 2:
         raise ValueError("window_size must be >= 2 for the gate to evaluate")
+    if n_frames < window_size:
+        # Refuse rather than emit a degenerate short window: a sub-window-size
+        # trajectory cannot run the multi-frame hard checks, so certifying it
+        # would let a single static check (e.g. stress symmetry) grant TRUST.
+        raise ValueError(
+            f"trajectory has {n_frames} frames < window_size {window_size}; "
+            "supply at least window_size frames"
+        )
 
     decisions: list[GaugeDecision] = []
     queue = ActiveLearningQueue()
-    for start in range(0, max(1, n_frames - window_size + 1)):
+    for start in range(0, n_frames - window_size + 1):
         sl = slice(start, start + window_size)
         ptraj = pos[sl]
         ctraj = None if cell_traj is None else cell_traj[sl]

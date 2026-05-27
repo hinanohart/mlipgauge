@@ -32,7 +32,7 @@ Q_traj(t) = [ ∏_k hard_gate_k(window_t) ] · (1 − u) · ∏ soft_scores
 ## Install
 
 ```bash
-pip install mlipgauge              # core (numpy / scipy / typer) + built-in mock backend
+pip install mlipgauge              # core (numpy / typer) + built-in mock backend
 pip install "mlipgauge[mace]"      # + MACE-MP-0    (weights: MIT)
 pip install "mlipgauge[chgnet]"    # + CHGNet       (weights: BSD-3-Clause)
 pip install "mlipgauge[mattersim]" # + MatterSim    (weights: MIT)
@@ -116,6 +116,12 @@ violations for the positive class (`n = 200` each, seed 0).
 The gate is graded, not always-on: detection of an energy–force inconsistency as
 a multiple of the tolerance is `0.0` at 0.5× and 0.9×, then `1.0` at 1.1×, 2×, 5×
 — a sharp transition at the configured threshold.
+
+The 1.00 specificity is a near-best case: the trapezoidal energy–force rule is
+*exact* for the quadratic potential of the harmonic mock backend, so its clean
+residual is ~0 at any step size. On a real anharmonic potential energy surface
+with realistic MD step sizes the rule carries genuine truncation error, so its
+false-positive behaviour there is part of the deferred real-MD validation.
 
 **Calibration (non-claim, synthetic).** On a constructed miscalibrated score
 distribution with a train/holdout split (`n = 4000`, seed 0), isotonic
