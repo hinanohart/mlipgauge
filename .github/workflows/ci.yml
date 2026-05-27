@@ -27,6 +27,9 @@ jobs:
       - uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
+          # uv.lock is not committed (library); key the cache on the dependency
+          # source so it actually invalidates instead of warning on a missing lock
+          cache-dependency-glob: "pyproject.toml"
           python-version: ${{ matrix.python-version }}
       # setup-uv (with python-version) already created and activated .venv.
       # Install only core + dev into it via pip-style install (no --system, and
