@@ -8,7 +8,7 @@ version = "0.1.0a2"
 description = "Uncertainty-driven runtime guardrail for MLIP molecular dynamics: calibrated cross-model uncertainty plus a fail-closed physics-validity gate over trajectory windows."
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "Apache-2.0" }
+license = { text = "MIT" }
 authors = [{ name = "hinanohart" }]
 keywords = [
     "machine-learning-interatomic-potential",
@@ -22,7 +22,7 @@ keywords = [
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: Apache Software License",
+    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Chemistry",

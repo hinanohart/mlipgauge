@@ -157,7 +157,7 @@ with a graded threshold response.
 ## Backends and licenses
 
 `mlipgauge` ships **no model weights**. Real backends are optional extras and
-their weights carry their own licenses, listed in [NOTICE](NOTICE). A runtime
+their weights carry their own licenses, listed in . A runtime
 allow-list refuses, fail-closed, to load a backend whose declared weight license
 is not commercially usable. MACE-OMAT-0 (ASL, non-commercial) is therefore not
 loadable by default; a caller must opt its license in explicitly.
@@ -172,4 +172,4 @@ python scripts/verify_step.py S2        # stage gate self-checks
 
 ## License
 
-Apache-2.0. See [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE).
