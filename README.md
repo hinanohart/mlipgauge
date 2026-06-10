@@ -29,33 +29,6 @@ Q_traj(t) = [ ∏_k hard_gate_k(window_t) ] · (1 − u) · ∏ soft_scores
 > calibration are deferred to later releases. See
 > [Claims and non-claims](#claims-and-non-claims).
 
-## Architecture
-
-```mermaid
-flowchart TD
-    traj[Trajectory positions_traj]
-    primary[Primary Backend MLIP]
-    ensemble[Ensemble Backends N backends]
-    window[TrajectoryWindow sliding window]
-    ens_forces[EnsembleForces cross-model forces]
-    uq[UQ Module aggregate_uncertainty]
-    gate[Physics Gate run_physics_gate]
-    decide[Decision decide Q and verdict]
-    al_queue[ActiveLearningQueue candidates for DFT]
-    output[GaugeDecision TRUST FLAG HALT or ABSTAIN]
-
-    traj --> primary
-    traj --> ensemble
-    primary --> window
-    ensemble --> ens_forces
-    window --> gate
-    ens_forces --> uq
-    gate --> decide
-    uq --> decide
-    decide --> output
-    decide --> al_queue
-```
-
 ## Install
 
 ```bash
@@ -103,6 +76,33 @@ print(al_queue.export())
 Each decision is `TRUST`, `FLAG`, `HALT` (a hard physics violation), or `ABSTAIN`
 (uncertainty uncomputable, or no hard check could run — both fail-closed).
 
+## Architecture
+
+```mermaid
+flowchart TD
+    traj[Trajectory positions_traj]
+    primary[Primary Backend MLIP]
+    ensemble[Ensemble Backends N backends]
+    window[TrajectoryWindow sliding window]
+    ens_forces[EnsembleForces cross-model forces]
+    uq[UQ Module aggregate_uncertainty]
+    gate[Physics Gate run_physics_gate]
+    decide[Decision decide Q and verdict]
+    al_queue[ActiveLearningQueue candidates for DFT]
+    output[GaugeDecision TRUST FLAG HALT or ABSTAIN]
+
+    traj --> primary
+    traj --> ensemble
+    primary --> window
+    ensemble --> ens_forces
+    window --> gate
+    ens_forces --> uq
+    gate --> decide
+    uq --> decide
+    decide --> output
+    decide --> al_queue
+```
+
 ## How it works
 
 The physics gate evaluates four hard checks over a trajectory window. Each is
@@ -112,18 +112,22 @@ skipped (and recorded) rather than guessed when its inputs are absent:
 |---|---|---|
 | `energy_force_consistency` | ΔE vs −∮F·dx (non-conservative / discontinuous PES) | ≥ 2 frames |
 | `nve_energy_conservation` | total (pot+kin) energy drift | kinetic energy |
-| `imaginary_phonon` | min mass-weighted Hessian eigenvalue < −tol (ω² < 0), rigid translational (acoustic) modes projected out first | a Hessian + masses |
+| `imaginary_phonon` | min mass-weighted Hessian eigenvalue < −tol (ω² < 0); rigid translational modes projected out first | Hessian + masses |
 | `stress_symmetry` | ‖σ − σᵀ‖ / ‖σ‖ (spurious torque) | stress tensor |
 
 The hard checks are combined multiplicatively (`hard_valid = ∏ 1[check passed]`),
-so the gate is fail-closed: one violation is enough to reject the window. Soft
-scores (continuous health in [0, 1]) down-weight near-violations without zeroing
-`Q`. The physics primitives themselves are standard; what `mlipgauge` adds is the
-decision layer that runs them over MD windows, normalizes per atom, projects the
-rigid translational (acoustic) modes out of the Hessian before the phonon test
-(so a finite-difference acoustic artefact of a stable structure is not mistaken
-for an imaginary mode), skips — rather than guesses — absent inputs, and feeds
-the runtime gauge and the active-learning queue.
+so the gate is fail-closed: one violation is enough to reject the window.
+Soft scores (continuous health in [0, 1]) down-weight near-violations without
+zeroing `Q`.
+
+What `mlipgauge` adds beyond the standard physics primitives:
+
+- runs checks over MD windows, normalized per atom;
+- projects rigid translational (acoustic) modes out of the Hessian before the
+  phonon test, so a finite-difference acoustic artefact of a stable structure is
+  not mistaken for an imaginary mode;
+- skips — rather than guesses — absent inputs;
+- feeds the runtime gauge and the active-learning queue.
 
 ### Decision logic
 
