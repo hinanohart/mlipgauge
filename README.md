@@ -78,30 +78,9 @@ Each decision is `TRUST`, `FLAG`, `HALT` (a hard physics violation), or `ABSTAIN
 
 ## Architecture
 
-```mermaid
-flowchart TD
-    traj[Trajectory positions_traj]
-    primary[Primary Backend MLIP]
-    ensemble[Ensemble Backends N backends]
-    window[TrajectoryWindow sliding window]
-    ens_forces[EnsembleForces cross-model forces]
-    uq[UQ Module aggregate_uncertainty]
-    gate[Physics Gate run_physics_gate]
-    decide[Decision decide Q and verdict]
-    al_queue[ActiveLearningQueue candidates for DFT]
-    output[GaugeDecision TRUST FLAG HALT or ABSTAIN]
-
-    traj --> primary
-    traj --> ensemble
-    primary --> window
-    ensemble --> ens_forces
-    window --> gate
-    ens_forces --> uq
-    gate --> decide
-    uq --> decide
-    decide --> output
-    decide --> al_queue
-```
+<div align="center">
+  <img src="docs/architecture.png" alt="mlipgauge architecture" width="840">
+</div>
 
 ## How it works
 
@@ -220,3 +199,4 @@ python scripts/verify_step.py S2        # stage gate self-checks
 ## License
 
 MIT. See [LICENSE](LICENSE).
+

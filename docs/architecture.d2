@@ -1,0 +1,47 @@
+direction: down
+explanation: |md
+  ### mlipgauge
+  **A runtime guardrail for molecular-dynamics simulations driven by machine-learned interatomic potentials (MLIPs).**
+| {near: top-center}
+
+traj: "① Trajectory\npositions_traj" {shape: cylinder; style: {fill: "#6366f1"; font-color: "#ffffff"; stroke: "#4338ca"; bold: true; font-size: 18}}
+
+mlip_zone: "MLIP Backends" {
+  style: {fill: "#fffbeb"; stroke: "#f59e0b"; font-color: "#92400e"; bold: true; font-size: 16}
+  primary: "② Primary Backend\nMLIP" {style: {fill: "#fef3c7"; font-color: "#92400e"}}
+  ensemble: "② Ensemble Backends\nN backends" {style: {fill: "#fef3c7"; font-color: "#92400e"}}
+}
+
+analysis_zone: "Analysis" {
+  style: {fill: "#f0fdf4"; stroke: "#10b981"; font-color: "#065f46"; bold: true; font-size: 16}
+  window: "③ TrajectoryWindow\nsliding window" {style: {fill: "#dcfce7"; font-color: "#065f46"}}
+  ens_forces: "③ EnsembleForces\ncross-model forces" {style: {fill: "#dcfce7"; font-color: "#065f46"}}
+  uq: "④ UQ Module\naggregate_uncertainty" {style: {fill: "#dcfce7"; font-color: "#065f46"}}
+  gate: "④ Physics Gate\nrun_physics_gate" {style: {fill: "#dcfce7"; font-color: "#065f46"}}
+}
+
+decide: "⑤ Decision\ndecide Q and verdict" {style: {fill: "#0ea5e9"; font-color: "#ffffff"; stroke: "#0369a1"; bold: true; font-size: 18}}
+
+output_zone: "Outputs" {
+  style: {fill: "#fdf2f8"; stroke: "#ec4899"; font-color: "#9d174e"; bold: true; font-size: 16}
+  output: "⑥ GaugeDecision\nTRUST / FLAG / HALT / ABSTAIN" {shape: cylinder; style: {fill: "#fdf2f8"; font-color: "#9d174e"}}
+  al_queue: "⑥ ActiveLearningQueue\ncandidates for DFT" {shape: cylinder; style: {fill: "#fdf2f8"; font-color: "#9d174e"}}
+}
+
+traj -> mlip_zone.primary: "① feed"
+traj -> mlip_zone.ensemble: "① feed"
+mlip_zone.primary -> analysis_zone.window: "② window"
+mlip_zone.ensemble -> analysis_zone.ens_forces: "② forces"
+analysis_zone.ens_forces -> analysis_zone.uq: "③ aggregate"
+analysis_zone.window -> analysis_zone.gate: "③ check"
+analysis_zone.gate -> decide: "④ signal"
+analysis_zone.uq -> decide: "④ signal"
+decide -> output_zone.output: "⑤ verdict"
+decide -> output_zone.al_queue: "⑤ queue"
+
+legend: "Legend" {
+  near: bottom-center
+  style: {fill: "#f8fafc"; stroke: "#cbd5e1"; font-size: 13}
+  e: "● entry"; c: "● core"; p: "● processing"; b: "● external"; d: "● output"
+  e.style.font-color: "#4338ca"; c.style.font-color: "#0369a1"; p.style.font-color: "#10b981"; b.style.font-color: "#f59e0b"; d.style.font-color: "#ec4899"
+}
