@@ -29,6 +29,33 @@ Q_traj(t) = [ ∏_k hard_gate_k(window_t) ] · (1 − u) · ∏ soft_scores
 > calibration are deferred to later releases. See
 > [Claims and non-claims](#claims-and-non-claims).
 
+## Architecture
+
+```mermaid
+flowchart TD
+    traj[Trajectory positions_traj]
+    primary[Primary Backend MLIP]
+    ensemble[Ensemble Backends N backends]
+    window[TrajectoryWindow sliding window]
+    ens_forces[EnsembleForces cross-model forces]
+    uq[UQ Module aggregate_uncertainty]
+    gate[Physics Gate run_physics_gate]
+    decide[Decision decide Q and verdict]
+    al_queue[ActiveLearningQueue candidates for DFT]
+    output[GaugeDecision TRUST FLAG HALT or ABSTAIN]
+
+    traj --> primary
+    traj --> ensemble
+    primary --> window
+    ensemble --> ens_forces
+    window --> gate
+    ens_forces --> uq
+    gate --> decide
+    uq --> decide
+    decide --> output
+    decide --> al_queue
+```
+
 ## Install
 
 ```bash
@@ -98,6 +125,22 @@ rigid translational (acoustic) modes out of the Hessian before the phonon test
 for an imaginary mode), skips — rather than guesses — absent inputs, and feeds
 the runtime gauge and the active-learning queue.
 
+### Decision logic
+
+```
+Q = hard_valid · (1 − u) · ∏ soft_scores
+```
+
+| condition | verdict |
+|---|---|
+| any hard gate fails (hard_valid = 0) | HALT |
+| uncertainty uncomputable | ABSTAIN |
+| all hard checks skipped (nothing to certify) | ABSTAIN |
+| Q ≥ trust_threshold (default 0.7) | TRUST |
+| otherwise | FLAG |
+
+Both HALT and ABSTAIN are fail-closed: they queue the window for active learning.
+
 > **Limitation (synthetic `0.1.0a*` scope).** Residuals and drifts are normalized
 > *per atom*, which targets system-wide (extensive) violations; a single-atom
 > localized discontinuity can be diluted in a very large cell. Quantifying this on
@@ -157,7 +200,7 @@ with a graded threshold response.
 ## Backends and licenses
 
 `mlipgauge` ships **no model weights**. Real backends are optional extras and
-their weights carry their own licenses, listed in . A runtime
+their weights carry their own licenses, listed in the package. A runtime
 allow-list refuses, fail-closed, to load a backend whose declared weight license
 is not commercially usable. MACE-OMAT-0 (ASL, non-commercial) is therefore not
 loadable by default; a caller must opt its license in explicitly.
